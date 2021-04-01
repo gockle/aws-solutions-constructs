@@ -28,6 +28,7 @@ abstract class CodeBuildToCodePipeline extends Construct {
     protected readonly sourceOutputArtifact: Artifact;
     protected readonly buildOutputArtifact: Artifact;
     protected readonly codeBuildProject: PipelineProject;
+    protected readonly codeBuildAction: CodeBuildAction;
 
     constructor(scope: Construct, id: string, props: CodeBuildToCodePipelineProps) {
         super(scope, id);
@@ -41,6 +42,13 @@ abstract class CodeBuildToCodePipeline extends Construct {
             environment: {
                 buildImage: LinuxBuildImage.STANDARD_4_0
             }
+        })
+
+        this.codeBuildAction = new CodeBuildAction({
+            actionName: "BuildAction",
+            input: this.sourceOutputArtifact,
+            project: this.codeBuildProject,
+            outputs: [this.buildOutputArtifact]
         })
     }
 }
@@ -64,8 +72,7 @@ export class CodeCommitToCodeBuildToCodePipeline extends CodeBuildToCodePipeline
      */
     constructor(scope: Construct, id: string, props: CodeCommitRepositoryProps) {
         super(scope, id, props);
-
-
+        
         let codeBuildSourceCodeAction = new CodeCommitSourceAction({
             actionName: "SourceAction",
             repository: new Repository(this, "CodeCommitRepository", {
@@ -75,13 +82,6 @@ export class CodeCommitToCodeBuildToCodePipeline extends CodeBuildToCodePipeline
             branch: props.branchName
         })
 
-        const codeBuildAction = new CodeBuildAction({
-            actionName: "BuildAction",
-            input: this.sourceOutputArtifact,
-            project: this.codeBuildProject,
-            outputs: [this.buildOutputArtifact]
-        })
-
         this.codepipeline.addStage({
             stageName: "SourceStage",
             actions: [codeBuildSourceCodeAction]
@@ -89,7 +89,7 @@ export class CodeCommitToCodeBuildToCodePipeline extends CodeBuildToCodePipeline
 
         this.codepipeline.addStage({
             stageName: 'BuildStage',
-            actions: [codeBuildAction]
+            actions: [this.codeBuildAction]
         })
     }
 }
@@ -124,13 +124,6 @@ export class GitHubToCodeBuildToCodePipeline extends CodeBuildToCodePipeline {
             trigger: GitHubTrigger.WEBHOOK
         })
 
-        const codeBuildAction = new CodeBuildAction({
-            actionName: "BuildAction",
-            input: this.sourceOutputArtifact,
-            project: this.codeBuildProject,
-            outputs: [this.buildOutputArtifact]
-        })
-
         this.codepipeline.addStage({
             stageName: "SourceStage",
             actions: [codeBuildSourceCodeAction]
@@ -138,7 +131,7 @@ export class GitHubToCodeBuildToCodePipeline extends CodeBuildToCodePipeline {
 
         this.codepipeline.addStage({
             stageName: 'BuildStage',
-            actions: [codeBuildAction]
+            actions: [this.codeBuildAction]
         })
     }
 }
@@ -174,13 +167,6 @@ export class S3ToCodeBuildToCodePipeline extends CodeBuildToCodePipeline {
             trigger: S3Trigger.POLL
         })
 
-        const codeBuildAction = new CodeBuildAction({
-            actionName: "BuildAction",
-            input: this.sourceOutputArtifact,
-            project: this.codeBuildProject,
-            outputs: [this.buildOutputArtifact]
-        })
-
         this.codepipeline.addStage({
             stageName: "SourceStage",
             actions: [codeBuildSourceCodeAction]
@@ -188,7 +174,7 @@ export class S3ToCodeBuildToCodePipeline extends CodeBuildToCodePipeline {
 
         this.codepipeline.addStage({
             stageName: 'BuildStage',
-            actions: [codeBuildAction]
+            actions: [this.codeBuildAction]
         })
     }
 }
